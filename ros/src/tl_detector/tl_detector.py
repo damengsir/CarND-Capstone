@@ -23,6 +23,8 @@ class TLDetector(object):
         self.camera_image = None
         self.lights = []
         self.waypoint_tree = None
+        self.waypoints_2d = None
+        self.i = 0
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -37,7 +39,7 @@ class TLDetector(object):
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
         sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
 
-        config_string = rospy.get_param("/traffic_light_config")
+        config_string = rospy.get_param("/traffic_light_config")###？？？？？？？？？？？？？
         self.config = yaml.load(config_string)
 
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
@@ -120,15 +122,25 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        return light.state
-#        if(not self.has_image):
-#            self.prev_light_loc = None
-#            return False
+    #    rospy.logwarn("@@@@@@@@@@@@@@state = : %s",light.state)
+    # Capture pictures from simulator
+    #    cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-#        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+    #    path = 'sim_images/{}.jpg'.format(self.i)
+    #    cv2.imwrite(path,cv_image)
+    #    self.i = self.i + 1
+
+    #    return light.state
+
+        if(not self.has_image):
+            self.prev_light_loc = None
+            return False
+
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+
 
         #Get classification
-#        return self.light_classifier.get_classification(cv_image)
+        return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -149,8 +161,9 @@ class TLDetector(object):
 
         #TODO find the closest visible traffic light (if one exists)
             diff = len(self.waypoints.waypoints)
-            for i, light in enumerate(self.lights):
+            for i, light in enumerate(self.lights): # the traffic light's information (position, number:8)
                 line = stop_line_positions[i]
+    
                 temp_wp_idx = self.get_closest_waypoint(line[0], line[1])
                 d = temp_wp_idx - car_wp_idx
                 if d>=0 and d<diff:
